@@ -8,6 +8,11 @@ interface Message {
   isBot: boolean;
   message: string;
   timestamp: string;
+  sourceLink?: {
+    title: string;
+    url: string;
+  };
+  pubmedArticles?: any[];
 }
 
 interface Response {
@@ -72,28 +77,28 @@ const ChatWindow = ({
   ],
 }: ChatWindowProps) => {
   return (
-    <div className="h-full w-full bg-gray-50 flex flex-col">
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              isBot={message.isBot}
-              message={message.message}
-              timestamp={message.timestamp}
-            />
-          ))}
-          {responses.map((response) => (
-            <ResponseCard
-              key={response.id}
-              type={response.type}
-              title={response.title}
-              content={response.content}
-              details={response.details}
-            />
-          ))}
-        </div>
-      </ScrollArea>
+    <div className="h-full w-full bg-background/30 flex flex-col overflow-auto">
+      <div className="flex-1 p-4 space-y-4 pb-4 min-h-full">
+        {messages.map((message) => (
+          <MessageBubble
+            key={message.id}
+            isBot={message.isBot}
+            message={message.message}
+            timestamp={message.timestamp}
+            sourceLink={message.sourceLink}
+            pubmedArticles={message.pubmedArticles}
+          />
+        ))}
+        {responses.map((response) => (
+          <ResponseCard
+            key={response.id}
+            type={response.type}
+            title={response.title}
+            content={response.content}
+            details={response.details}
+          />
+        ))}
+      </div>
     </div>
   );
 };

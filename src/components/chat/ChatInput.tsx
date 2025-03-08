@@ -26,7 +26,7 @@ const ChatInput = ({
   };
 
   return (
-    <div className="border-t bg-white p-4">
+    <div className="border-t bg-background/80 backdrop-blur-sm p-4 shadow-lg sticky bottom-0 left-0 right-0 z-20">
       <div className="mx-auto flex max-w-4xl items-center gap-2">
         <Input
           placeholder={placeholder}

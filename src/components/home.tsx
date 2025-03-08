@@ -37,22 +37,37 @@ const Home = () => {
         content: msg.message,
       }));
 
-      const { response, hospitals, nutritionPlan, isFirstAid, sources } =
-        await chatWithMistral([
-          {
-            role: "system",
-            content:
-              "You are a medical assistant AI. Provide helpful medical advice while being clear that you are not a replacement for professional medical care.",
-          },
-          ...messageHistory,
-          { role: "user", content: inputValue },
-        ]);
+      const {
+        response,
+        hospitals,
+        nutritionPlan,
+        workoutPlan,
+        firstAidGuide,
+        isFirstAid,
+        sources,
+      } = await chatWithMistral([
+        {
+          role: "system",
+          content:
+            "You are a medical assistant AI. Provide helpful medical advice while being clear that you are not a replacement for professional medical care.",
+        },
+        ...messageHistory,
+        { role: "user", content: inputValue },
+      ]);
 
+      // Add source link to the bot response if available
       const botResponse = {
         id: (Date.now() + 1).toString(),
         isBot: true,
         message: response,
         timestamp: new Date().toLocaleTimeString(),
+        sourceLink:
+          sources && sources.length > 0
+            ? {
+                title: sources[0].title,
+                url: sources[0].url,
+              }
+            : undefined,
       };
 
       setMessages((prev) => [...prev, botResponse]);
@@ -60,16 +75,8 @@ const Home = () => {
       // Add response cards based on the type of information
       const newResponses = [];
 
-      // Add medical advice card with sources
-      newResponses.push({
-        id: Date.now().toString(),
-        type: "medical-advice",
-        title: "Medical Information",
-        content: response,
-        details: {
-          sources,
-        },
-      });
+      // Don't add the medical information card with the pin symbol
+      // Just add the response to the messages array, which was already done above
 
       if (hospitals?.length > 0) {
         newResponses.push({
@@ -96,21 +103,34 @@ const Home = () => {
         });
       }
 
-      if (isFirstAid) {
+      if (workoutPlan) {
         newResponses.push({
           id: (Date.now() + 3).toString(),
-          type: "first-aid",
-          title: "First Aid Instructions",
-          content: "Important: Call emergency services if condition is severe.",
+          type: "workout-plan",
+          title: "Recommended Workout Plan",
+          content: "Here's a personalized workout plan based on your needs:",
+          details: {
+            workouts: workoutPlan.workouts,
+          },
+        });
+      }
+
+      if (isFirstAid && firstAidGuide) {
+        newResponses.push({
+          id: (Date.now() + 4).toString(),
+          type: "first-aid-guide",
+          title: `First Aid: ${firstAidGuide.condition}`,
+          content: firstAidGuide.emergency
+            ? "EMERGENCY: Call for help immediately"
+            : "Follow these first aid steps carefully",
           details: {
             sources,
-            instructions: [
-              "Remain calm and assess the situation",
-              "Ensure the area is safe",
-              "Check for responsiveness if applicable",
-              "Follow specific first aid protocols",
-              "Seek professional medical help",
-            ],
+            condition: firstAidGuide.condition,
+            emergency: firstAidGuide.emergency,
+            emergencyContact: firstAidGuide.emergencyContact,
+            timeFrame: firstAidGuide.timeFrame,
+            firstAidSteps: firstAidGuide.steps,
+            doNotDo: firstAidGuide.doNotDo,
           },
         });
       }
@@ -131,7 +151,7 @@ const Home = () => {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background">
+    <div className="flex h-screen w-full flex-col bg-background/80 backdrop-blur-sm chat-pages">
       <ChatHeader status={isTyping ? "typing" : "online"} />
       <main className="flex-1 pt-16">
         <ChatWindow messages={messages} responses={responses} />
