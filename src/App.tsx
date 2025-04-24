@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import routes from "tempo-routes";
@@ -38,6 +38,11 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 import SplashCursor from "./components/SplashCursor";
 
+// Lazy load auth pages
+const ForgotPassword = lazy(() => import("./pages/auth/forgot-password"));
+const ResetPassword = lazy(() => import("./pages/auth/reset-password"));
+const Profile = lazy(() => import("./pages/profile"));
+
 function App() {
   return (
     <AuthProvider>
@@ -50,7 +55,33 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route
+                path="/forgot-password"
+                element={
+                  <Suspense fallback={<p>Loading...</p>}>
+                    <ForgotPassword />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <Suspense fallback={<p>Loading...</p>}>
+                    <ResetPassword />
+                  </Suspense>
+                }
+              />
               <Route path="/first-aid" element={<FirstAid />} />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Suspense fallback={<p>Loading...</p>}>
+                      <Profile />
+                    </Suspense>
+                  </PrivateRoute>
+                }
+              />
               <Route
                 path="/chat"
                 element={

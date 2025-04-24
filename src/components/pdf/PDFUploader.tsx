@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileText, Check, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { uploadPDF, storePDFMetadata, storePDFContent } from "@/lib/pdf";
 import { chromaClient } from "@/lib/chromadb";
 
@@ -19,6 +20,7 @@ export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [shouldSummarize, setShouldSummarize] = useState(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -61,6 +63,7 @@ export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
         author,
         0, // Page count will be updated after processing
         file.size,
+        shouldSummarize, // Pass the summarization flag
       );
 
       if (!documentId) {
@@ -138,6 +141,8 @@ export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
               <Check className="h-4 w-4" />
               <AlertDescription>
                 PDF uploaded and processed successfully!
+                {shouldSummarize &&
+                  " A summary will be generated for this document."}
               </AlertDescription>
             </Alert>
           )}
@@ -179,6 +184,19 @@ export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="Enter author name"
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="summarize"
+              checked={shouldSummarize}
+              onCheckedChange={(checked) =>
+                setShouldSummarize(checked as boolean)
+              }
+            />
+            <Label htmlFor="summarize" className="text-sm cursor-pointer">
+              Generate AI summary of this document
+            </Label>
           </div>
 
           <Button type="submit" className="w-full" disabled={loading || !file}>

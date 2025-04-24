@@ -2,7 +2,7 @@ import axios from "axios";
 import { searchMedlinePlus } from "./medline";
 import { searchPubMed } from "./pubmed";
 import { vectorStore } from "./vectorstore";
-import { searchPDFContent } from "./pdf";
+import { searchPDFContent, summarizePDFDocument } from "./pdf";
 import { chromaClient } from "./chromadb";
 import { findNearbyHospitals } from "./hospitals";
 import { getNutritionPlan } from "./nutrition";
@@ -262,3 +262,16 @@ export const chatWithMistral = async (
     throw error;
   }
 };
+
+// Function to generate a summary of a medical document using AI
+export async function generateDocumentSummary(documentId: string) {
+  try {
+    // In a real implementation, this would call an AI service to generate a summary
+    // For now, we'll use the mock implementation in pdf.ts
+    const summary = await summarizePDFDocument(documentId);
+    return summary;
+  } catch (error) {
+    console.error("Error generating document summary:", error);
+    throw error;
+  }
+}

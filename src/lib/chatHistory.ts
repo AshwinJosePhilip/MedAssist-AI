@@ -9,6 +9,7 @@ export interface ChatMessage {
     title: string;
     url: string;
   };
+  pubmedArticles?: any[];
 }
 
 export interface ChatSession {
@@ -63,18 +64,24 @@ export async function saveChatMessage(
   message: Omit<ChatMessage, "id">,
 ): Promise<string | null> {
   try {
+    // Prepare the message data for insertion
+    const messageData: any = {
+      session_id: sessionId,
+      is_bot: message.isBot,
+      message: message.message,
+      timestamp: message.timestamp,
+      source_title: message.sourceLink?.title || null,
+      source_url: message.sourceLink?.url || null,
+    };
+
+    // Add pubmedArticles if they exist
+    if (message.pubmedArticles && message.pubmedArticles.length > 0) {
+      messageData.pubmed_articles = message.pubmedArticles;
+    }
+
     const { data, error } = await supabase
       .from("chat_messages")
-      .insert([
-        {
-          session_id: sessionId,
-          is_bot: message.isBot,
-          message: message.message,
-          timestamp: message.timestamp,
-          source_title: message.sourceLink?.title || null,
-          source_url: message.sourceLink?.url || null,
-        },
-      ])
+      .insert([messageData])
       .select("id")
       .single();
 
@@ -155,6 +162,7 @@ export async function getChatMessages(
             url: message.source_url,
           }
         : undefined,
+      pubmedArticles: message.pubmed_articles || [],
     }));
   } catch (error) {
     console.error("Error in getChatMessages:", error);

@@ -96,6 +96,50 @@ export default function PDFDocumentList({
     );
   }
 
+  // If a summary is selected or loading, show the summary view instead of the document list
+  if (selectedSummary || summaryLoading || summaryError) {
+    return (
+      <div className="space-y-4">
+        {selectedSummary && (
+          <SummarizedReport
+            documentId={selectedSummary.documentId}
+            title={selectedSummary.title}
+            summary={selectedSummary.summary}
+            createdAt={selectedSummary.createdAt}
+            onClose={closeSummary}
+            loading={summaryLoading}
+            error={summaryError || undefined}
+          />
+        )}
+
+        {!selectedSummary && summaryLoading && (
+          <SummarizedReport
+            documentId=""
+            title=""
+            summary=""
+            createdAt=""
+            loading={true}
+          />
+        )}
+
+        {!selectedSummary && !summaryLoading && summaryError && (
+          <SummarizedReport
+            documentId=""
+            title=""
+            summary=""
+            createdAt=""
+            error={summaryError}
+            onClose={closeSummary}
+          />
+        )}
+
+        <Button variant="outline" className="w-full" onClick={closeSummary}>
+          Back to Documents
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full bg-card">
       <CardHeader>
@@ -143,6 +187,15 @@ export default function PDFDocumentList({
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    {doc.hasSummary && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewSummary(doc.id)}
+                      >
+                        View Summary
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -150,7 +203,7 @@ export default function PDFDocumentList({
                         onSelectDocument && onSelectDocument(doc.id)
                       }
                     >
-                      View
+                      View Document
                     </Button>
                   </div>
                 </div>

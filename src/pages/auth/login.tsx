@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -64,13 +66,37 @@ export default function Login() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+            <div className="text-right">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-xs text-muted-foreground"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Forgot password?
+              </Button>
+            </div>
           </div>
           <Button className="w-full" type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
