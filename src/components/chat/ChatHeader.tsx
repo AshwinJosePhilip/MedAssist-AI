@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, Info, MessageSquare } from "lucide-react";
+import { Settings, Info, MessageSquare, Menu, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +20,10 @@ interface ChatHeaderProps {
   onInfoClick?: () => void;
   onMenuClick?: () => void;
   showMenuButton?: boolean;
+  title?: string;
+  onNewChat?: () => void;
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
 }
 
 const ChatHeader = ({
@@ -30,6 +35,10 @@ const ChatHeader = ({
   onInfoClick = () => {},
   onMenuClick = () => {},
   showMenuButton = false,
+  title = "Medical Assistant",
+  onNewChat,
+  onToggleSidebar,
+  sidebarOpen = false,
 }: ChatHeaderProps) => {
   return (
     <div className="fixed top-0 left-0 right-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 shadow-md">
@@ -42,6 +51,17 @@ const ChatHeader = ({
             className="md:hidden h-9 w-9"
           >
             <MessageSquare className="h-5 w-5" />
+          </Button>
+        )}
+        {onToggleSidebar && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden"
+            onClick={onToggleSidebar}
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            <Menu className="h-5 w-5" />
           </Button>
         )}
         <h1 className="text-xl font-semibold text-primary">{botName}</h1>

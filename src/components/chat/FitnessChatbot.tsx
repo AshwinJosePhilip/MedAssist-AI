@@ -5,6 +5,7 @@ import ChatHeader from "./ChatHeader";
 import ChatWindow from "./ChatWindow";
 import ChatInput from "./ChatInput";
 import ChatSidebar from "./ChatSidebar";
+import HeartbeatLoadingAnimation from "./HeartbeatLoadingAnimation";
 import { chatWithMistral } from "@/lib/api";
 import { summarizeChatTitle } from "@/lib/titleSummarizer";
 import {
@@ -42,14 +43,61 @@ const FitnessChatbot = () => {
     if (sessionId) {
       loadChatHistory(sessionId);
       setCurrentSessionId(sessionId);
+    } else {
+      // If no session ID but we have cached messages, restore them
+      const cachedMessages = localStorage.getItem('fitness_cachedMessages');
+      const cachedResponses = localStorage.getItem('fitness_cachedResponses');
+      
+      if (cachedMessages) {
+        try {
+          const parsedMessages = JSON.parse(cachedMessages);
+          if (parsedMessages.length > 0) {
+            setMessages(parsedMessages);
+          }
+        } catch (error) {
+          console.error("Error parsing cached messages:", error);
+        }
+      }
+      
+      if (cachedResponses) {
+        try {
+          const parsedResponses = JSON.parse(cachedResponses);
+          if (parsedResponses.length > 0) {
+            setResponses(parsedResponses);
+          }
+        } catch (error) {
+          console.error("Error parsing cached responses:", error);
+        }
+      }
     }
   }, [sessionId]);
+
+  // Update localStorage whenever messages or responses change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('fitness_cachedMessages', JSON.stringify(messages));
+    }
+    if (responses.length > 0) {
+      localStorage.setItem('fitness_cachedResponses', JSON.stringify(responses));
+    }
+  }, [messages, responses]);
 
   const loadChatHistory = async (chatSessionId: string) => {
     try {
       const chatMessages = await getChatMessages(chatSessionId);
       if (chatMessages.length > 0) {
         setMessages(chatMessages);
+      } else {
+        // If no messages exist, add the welcome message
+        const welcomeMessage = {
+          id: "welcome",
+          isBot: true,
+          message:
+            "Hello! I'm your Fitness & Nutrition assistant. I can help with workout plans, diet recommendations, and health goals. What would you like assistance with today?",
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        setMessages([welcomeMessage]);
+        await saveChatMessage(chatSessionId, welcomeMessage);
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
@@ -61,20 +109,37 @@ const FitnessChatbot = () => {
     setSidebarOpen(false);
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    // Clear cached messages when starting a new chat
+    localStorage.removeItem('fitness_cachedMessages');
+    localStorage.removeItem('fitness_cachedResponses');
+    
     navigate("/chat/fitness");
     setCurrentSessionId(null);
-    setMessages([
-      {
-        id: "welcome",
-        isBot: true,
-        message:
-          "Hello! I'm your Fitness & Nutrition assistant. I can help with workout plans, diet recommendations, and health goals. What would you like assistance with today?",
-        timestamp: new Date().toLocaleTimeString(),
-      },
-    ]);
+    const welcomeMessage = {
+      id: "welcome",
+      isBot: true,
+      message:
+        "Hello! I'm your Fitness & Nutrition assistant. I can help with workout plans, diet recommendations, and health goals. What would you like assistance with today?",
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    setMessages([welcomeMessage]);
     setResponses([]);
     setSidebarOpen(false);
+
+    // Create a new session for the welcome message if user is logged in
+    if (user) {
+      const newSessionId = await createChatSession(
+        user.id,
+        "New Fitness Chat",
+        "fitness"
+      );
+      if (newSessionId) {
+        setCurrentSessionId(newSessionId);
+        setSearchParams({ session: newSessionId });
+        await saveChatMessage(newSessionId, welcomeMessage);
+      }
+    }
   };
 
   const handleSendMessage = async () => {
@@ -201,43 +266,42 @@ const FitnessChatbot = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background/80 backdrop-blur-sm chat-pages">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
-
-      <div
-        className={`fixed top-0 bottom-0 left-0 z-50 md:relative md:z-0 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
-      >
+    <div className="flex h-full overflow-hidden">
+      <div className="h-full overflow-hidden">
         <ChatSidebar
           currentChatId={currentSessionId || undefined}
           onSelectChat={handleSelectChat}
           onNewChat={handleNewChat}
+          isOpen={sidebarOpen}
         />
       </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         <ChatHeader
           botName="Fitness & Nutrition Assistant"
           status={isTyping ? "typing" : "online"}
-          sessionId={currentSessionId || undefined}
-          onSelectChat={handleSelectChat}
-          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-          showMenuButton={true}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
+          onNewChat={handleNewChat}
         />
-        <main className="flex-1 pt-16 overflow-auto h-[calc(100vh-8rem)]">
-          <ChatWindow messages={messages} responses={responses} />
-        </main>
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSendMessage}
-          disabled={isTyping}
-          placeholder="Ask about workout plans, diet recommendations, or fitness goals..."
-        />
+
+        <div className="flex-1 overflow-hidden">
+          <ChatWindow 
+            messages={messages} 
+            responses={responses} 
+            isTyping={isTyping}
+          />
+        </div>
+
+        <div className="p-4 border-t border-border">
+          <ChatInput
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onSend={handleSendMessage}
+            disabled={isTyping}
+            placeholder="Ask about fitness, nutrition, or workout plans..."
+          />
+        </div>
       </div>
     </div>
   );

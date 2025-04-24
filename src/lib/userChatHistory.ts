@@ -37,11 +37,11 @@ export async function getUserChatSessionsByType(
 // Function to get chat session statistics for a user
 export async function getUserChatStats(userId: string) {
   try {
+    // First, let's get the count of each chat type
     const { data, error } = await supabase
       .from("chat_sessions")
-      .select("chat_type, count")
-      .eq("user_id", userId)
-      .group("chat_type");
+      .select("chat_type")
+      .eq("user_id", userId);
 
     if (error) {
       console.error("Error getting chat stats:", error);
@@ -60,9 +60,13 @@ export async function getUserChatStats(userId: string) {
       total: 0,
     };
 
+    // Count each chat type manually
     data.forEach((item) => {
-      stats[item.chat_type as keyof typeof stats] = parseInt(item.count);
-      stats.total += parseInt(item.count);
+      const chatType = item.chat_type as keyof typeof stats;
+      if (chatType in stats) {
+        stats[chatType] += 1;
+        stats.total += 1;
+      }
     });
 
     return stats;

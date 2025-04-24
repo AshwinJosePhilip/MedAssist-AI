@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import MessageBubble from "./MessageBubble";
 import ResponseCard from "./ResponseCard";
+import HeartbeatLoadingAnimation from "./HeartbeatLoadingAnimation";
 
 interface Message {
   id: string;
@@ -32,53 +33,37 @@ interface Response {
 interface ChatWindowProps {
   messages?: Message[];
   responses?: Response[];
+  isTyping?: boolean;
 }
 
 const ChatWindow = ({
-  messages = [
-    {
-      id: "1",
-      isBot: true,
-      message: "Hello! I'm your medical assistant. How can I help you today?",
-      timestamp: new Date().toLocaleTimeString(),
-    },
-    {
-      id: "2",
-      isBot: false,
-      message: "I have a headache and fever. What should I do?",
-      timestamp: new Date().toLocaleTimeString(),
-    },
-  ],
-  responses = [
-    {
-      id: "1",
-      type: "medical-advice",
-      title: "Headache & Fever Management",
-      content: "Based on your symptoms, here are some recommendations:",
-      details: {
-        instructions: [
-          "Rest in a quiet, dark room",
-          "Stay hydrated",
-          "Take over-the-counter pain relievers",
-          "Monitor your temperature",
-        ],
-      },
-    },
-    {
-      id: "2",
-      type: "hospital-info",
-      title: "Nearby Medical Facilities",
-      content: "If symptoms persist, consider visiting:",
-      details: {
-        location: "City General Hospital - 2.5 miles away",
-        phone: "(555) 123-4567",
-      },
-    },
-  ],
+  messages = [],
+  responses = [],
+  isTyping = false,
 }: ChatWindowProps) => {
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  
+  // Store messages and responses in localStorage when they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('cachedMessages', JSON.stringify(messages));
+    }
+    if (responses.length > 0) {
+      localStorage.setItem('cachedResponses', JSON.stringify(responses));
+    }
+  }, [messages, responses]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, responses, isTyping]);
+
   return (
-    <div className="h-full w-full bg-background/30 flex flex-col overflow-auto">
-      <div className="flex-1 p-4 space-y-4 pb-4 min-h-full">
+    <ScrollArea className="h-[calc(100vh-13rem)] w-full bg-background/30">
+      <div className="flex flex-col flex-grow min-h-full pt-16 p-4 space-y-4">
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -98,8 +83,16 @@ const ChatWindow = ({
             details={response.details}
           />
         ))}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-muted/50 backdrop-blur-sm rounded-lg p-4 max-w-[80%]">
+              <HeartbeatLoadingAnimation text="AI is thinking..." />
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} className="h-0" />
       </div>
-    </div>
+    </ScrollArea>
   );
 };
 

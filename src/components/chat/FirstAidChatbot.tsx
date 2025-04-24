@@ -5,6 +5,7 @@ import ChatHeader from "./ChatHeader";
 import ChatWindow from "./ChatWindow";
 import ChatInput from "./ChatInput";
 import ChatSidebar from "./ChatSidebar";
+import HeartbeatLoadingAnimation from "./HeartbeatLoadingAnimation";
 import { chatWithMistral } from "@/lib/api";
 import { summarizeChatTitle } from "@/lib/titleSummarizer";
 import {
@@ -42,15 +43,62 @@ const FirstAidChatbot = () => {
     if (sessionId) {
       loadChatHistory(sessionId);
       setCurrentSessionId(sessionId);
+    } else {
+      // If no session ID but we have cached messages, restore them
+      const cachedMessages = localStorage.getItem('firstaid_cachedMessages');
+      const cachedResponses = localStorage.getItem('firstaid_cachedResponses');
+      
+      if (cachedMessages) {
+        try {
+          const parsedMessages = JSON.parse(cachedMessages);
+          if (parsedMessages.length > 0) {
+            setMessages(parsedMessages);
+          }
+        } catch (error) {
+          console.error("Error parsing cached messages:", error);
+        }
+      }
+      
+      if (cachedResponses) {
+        try {
+          const parsedResponses = JSON.parse(cachedResponses);
+          if (parsedResponses.length > 0) {
+            setResponses(parsedResponses);
+          }
+        } catch (error) {
+          console.error("Error parsing cached responses:", error);
+        }
+      }
     }
   }, [sessionId]);
+
+  // Update localStorage whenever messages or responses change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('firstaid_cachedMessages', JSON.stringify(messages));
+    }
+    if (responses.length > 0) {
+      localStorage.setItem('firstaid_cachedResponses', JSON.stringify(responses));
+    }
+  }, [messages, responses]);
 
   const loadChatHistory = async (chatSessionId: string) => {
     try {
       const chatMessages = await getChatMessages(chatSessionId);
-      if (chatMessages.length > 0) {
-        setMessages(chatMessages);
-      }
+        if (chatMessages.length > 0) {
+          setMessages(chatMessages);
+        } else {
+          // If no messages exist, add the welcome message
+          const welcomeMessage = {
+            id: "welcome",
+            isBot: true,
+            message:
+              "Hello! I'm your First Aid assistant. I can provide emergency instructions and guidance. What emergency situation do you need help with?",
+            timestamp: new Date().toLocaleTimeString(),
+          };
+          setMessages([welcomeMessage]);
+          await saveChatMessage(chatSessionId, welcomeMessage);
+        }
     } catch (error) {
       console.error("Error loading chat history:", error);
     }
@@ -61,20 +109,37 @@ const FirstAidChatbot = () => {
     setSidebarOpen(false);
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    // Clear cached messages when starting a new chat
+    localStorage.removeItem('firstaid_cachedMessages');
+    localStorage.removeItem('firstaid_cachedResponses');
+    
     navigate("/chat/firstaid");
     setCurrentSessionId(null);
-    setMessages([
-      {
-        id: "welcome",
-        isBot: true,
-        message:
-          "Hello! I'm your First Aid assistant. I can provide emergency instructions and guidance. What emergency situation do you need help with?",
-        timestamp: new Date().toLocaleTimeString(),
-      },
-    ]);
+    const welcomeMessage = {
+      id: "welcome",
+      isBot: true,
+      message:
+        "Hello! I'm your First Aid assistant. I can provide emergency instructions and guidance. What emergency situation do you need help with?",
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    setMessages([welcomeMessage]);
     setResponses([]);
     setSidebarOpen(false);
+
+    // Create a new session for the welcome message if user is logged in
+    if (user) {
+      const newSessionId = await createChatSession(
+        user.id,
+        "New First Aid Chat",
+        "firstaid"
+      );
+      if (newSessionId) {
+        setCurrentSessionId(newSessionId);
+        setSearchParams({ session: newSessionId });
+        await saveChatMessage(newSessionId, welcomeMessage);
+      }
+    }
   };
 
   const handleSendMessage = async () => {
@@ -113,6 +178,8 @@ const FirstAidChatbot = () => {
       } else if (currentSessionId) {
         // Save the user message to the existing session
         await saveChatMessage(currentSessionId, newMessage);
+      } else {
+        console.log("No session ID available to save message. User may not be logged in.");
       }
 
       const messageHistory = messages.map((msg) => ({
@@ -120,7 +187,7 @@ const FirstAidChatbot = () => {
         content: msg.message,
       }));
 
-      const { response, firstAidGuide, sources, pubmedArticles } =
+      const { response, firstAidGuide, sources, pubmedResults } =
         await chatWithMistral([
           {
             role: "system",
@@ -144,7 +211,7 @@ const FirstAidChatbot = () => {
                 url: sources[0].url,
               }
             : undefined,
-        pubmedArticles: pubmedArticles,
+        pubmedArticles: pubmedResults,
       };
 
       setMessages((prev) => [...prev, botResponse]);
@@ -198,49 +265,40 @@ const FirstAidChatbot = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background/80 backdrop-blur-sm chat-pages">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
+    <div className="flex h-full">
+      <ChatSidebar
+        currentChatId={currentSessionId || undefined}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        isOpen={sidebarOpen}
+      />
 
-      <div
-        className={`fixed top-0 bottom-0 left-0 z-50 md:relative md:z-0 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
-      >
-        <ChatSidebar
-          currentChatId={currentSessionId || undefined}
-          onSelectChat={handleSelectChat}
+      <div className="flex-1 flex flex-col h-full">
+        <ChatHeader
+          botName="First Aid Assistant"
+          status={isTyping ? "typing" : "online"}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
           onNewChat={handleNewChat}
         />
-      </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <ChatHeader
-          botName="First Aid Support"
-          status={isTyping ? "typing" : "online"}
-          sessionId={currentSessionId || undefined}
-          onSelectChat={handleSelectChat}
-          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-          showMenuButton={true}
-        />
-        <div className="bg-red-900/20 border-y border-red-500/30 py-2 px-4 text-center">
-          <p className="text-sm text-red-400">
-            For life-threatening emergencies, always call 112 or 1066 (poison
-            control) immediately.
-          </p>
+        <div className="flex-1 overflow-hidden">
+          <ChatWindow 
+            messages={messages} 
+            responses={responses} 
+            isTyping={isTyping}
+          />
         </div>
-        <main className="flex-1 pt-12 overflow-auto h-[calc(100vh-8rem)]">
-          <ChatWindow messages={messages} responses={responses} />
-        </main>
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSendMessage}
-          disabled={isTyping}
-          placeholder="Describe the emergency situation (e.g., choking, bleeding, burns)..."
-        />
+
+        <div className="p-4 border-t border-border">
+          <ChatInput
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onSend={handleSendMessage}
+            disabled={isTyping}
+            placeholder="Describe the emergency situation..."
+          />
+        </div>
       </div>
     </div>
   );

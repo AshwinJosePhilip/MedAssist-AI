@@ -14,7 +14,7 @@ class VectorStore {
       );
 
       // Create memory vector store
-      this.store = new MemoryVectorStore();
+      this.store = new MemoryVectorStore(this.embedder);
       this.initialized = true;
     }
   }
@@ -30,8 +30,7 @@ class VectorStore {
     await this.store?.addDocuments([
       {
         pageContent: text,
-        metadata,
-        embedding,
+        metadata
       },
     ]);
   }
@@ -44,7 +43,9 @@ class VectorStore {
     const embedding = Array.from(output.data);
 
     // Search using cosine similarity
-    return this.store?.similaritySearchVectorWithScore(embedding, k) || [];
+    // Convert embedding to number[] to fix type error
+    const numberEmbedding = embedding.map(val => Number(val));
+    return this.store?.similaritySearchVectorWithScore(numberEmbedding, k) || [];
   }
 }
 

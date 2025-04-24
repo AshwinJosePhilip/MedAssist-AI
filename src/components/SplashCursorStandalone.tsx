@@ -10,9 +10,9 @@ export default function SplashCursorStandalone() {
       VELOCITY_DISSIPATION={2.5}
       PRESSURE={0.1}
       PRESSURE_ITERATIONS={20}
-      CURL={2.0}
-      SPLAT_RADIUS={0.15}
-      SPLAT_FORCE={4000}
+      CURL={1.5}
+      SPLAT_RADIUS={0.08}
+      SPLAT_FORCE={2000}
       SHADING={true}
       COLOR_UPDATE_SPEED={7}
       BACK_COLOR={{ r: 0.1, g: 0.1, b: 0.3 }}

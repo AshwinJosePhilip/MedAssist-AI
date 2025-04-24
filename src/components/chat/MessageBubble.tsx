@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink, BookOpen, BookOpenCheck } from "lucide-react";
 import FormattedResponse from "./FormattedResponse";
 
 interface MessageBubbleProps {
@@ -65,14 +65,29 @@ const MessageBubble = ({
               "bg-card text-card-foreground",
             )}
           >
-            <p className="text-sm whitespace-pre-line">{message}</p>
-            <span className="mt-1 block text-xs opacity-50">{timestamp}</span>
-            {isBot && message.includes("Source: PubMed") && (
-              <div className="mt-2 pt-2 border-t border-primary/10">
-                <p className="text-xs text-primary inline-flex items-center gap-1">
-                  <ExternalLink className="h-3 w-3" /> Retrieved from PubMed
-                  database
+            <div className="flex items-center gap-2 mb-2 text-primary">
+              <BookOpenCheck className="h-4 w-4" />
+              <span className="font-medium">PubMed-Based Response</span>
+            </div>
+            <div className="text-sm whitespace-pre-line">
+              {/* Format the message with better paragraph spacing */}
+              {message.split("\n\n").map((paragraph, i) => (
+                <p key={i} className={i > 0 ? "mt-3" : ""}>
+                  {paragraph}
                 </p>
+              ))}
+            </div>
+            <span className="mt-2 block text-xs opacity-50">{timestamp}</span>
+            {sourceLink && (
+              <div className="mt-2 pt-2 border-t border-primary/10">
+                <a
+                  href={sourceLink.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary inline-flex items-center gap-1"
+                >
+                  <BookOpen className="h-3 w-3" /> Source: {sourceLink.title}
+                </a>
               </div>
             )}
           </Card>
@@ -91,23 +106,28 @@ const MessageBubble = ({
               : "bg-primary text-primary-foreground",
           )}
         >
-          <p className="text-sm whitespace-pre-line">{message}</p>
-          <span className="mt-1 block text-xs opacity-50">{timestamp}</span>
-          {isBot && message.includes("Source: PubMed") && (
-            <div className="mt-2 pt-2 border-t border-primary/10">
-              <p className="text-xs text-primary inline-flex items-center gap-1">
-                <ExternalLink className="h-3 w-3" /> Retrieved from PubMed
-                database
+          <div className="text-sm whitespace-pre-line">
+            {/* Format the message with better paragraph spacing */}
+            {message.split("\n\n").map((paragraph, i) => (
+              <p key={i} className={i > 0 ? "mt-3" : ""}>
+                {paragraph}
               </p>
+            ))}
+          </div>
+          <span className="mt-2 block text-xs opacity-50">{timestamp}</span>
+          {sourceLink && (
+            <div className="mt-2 pt-2 border-t border-primary/10">
+              <a
+                href={sourceLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary inline-flex items-center gap-1"
+              >
+                <ExternalLink className="h-3 w-3" /> Source: {sourceLink.title}
+              </a>
             </div>
           )}
         </Card>
-      )}
-
-      {!isBot && (
-        <Avatar className="h-8 w-8">
-          <img src={avatar} alt="User Avatar" className="h-full w-full" />
-        </Avatar>
       )}
     </div>
   );
