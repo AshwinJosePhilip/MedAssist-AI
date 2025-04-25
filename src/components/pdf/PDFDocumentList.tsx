@@ -11,6 +11,8 @@ interface PDFDocument {
   uploadedAt: string;
   fileSize: number;
   pageCount: number;
+  hasSummary?: boolean;
+  summaryId?: string;
 }
 
 interface PDFDocumentListProps {

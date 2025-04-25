@@ -1,16 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PDFUploader from "@/components/pdf/PDFUploader";
 import PDFDocumentList from "@/components/pdf/PDFDocumentList";
 import { useAuth } from "@/lib/auth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 
 export default function Documents() {
   const { user, loading } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("documents");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    // Check URL parameters to set the active tab
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "upload") {
+      setActiveTab("upload");
+    }
+  }, [searchParams]);
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading...</div>;
@@ -50,7 +59,10 @@ export default function Documents() {
         </TabsList>
 
         <TabsContent value="documents" className="space-y-4">
-          <PDFDocumentList onSelectDocument={handleSelectDocument} />
+          <PDFDocumentList
+            onSelectDocument={handleSelectDocument}
+            onAddDocument={() => setActiveTab("upload")}
+          />
         </TabsContent>
 
         <TabsContent value="upload">
