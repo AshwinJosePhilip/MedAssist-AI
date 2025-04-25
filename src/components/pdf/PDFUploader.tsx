@@ -14,6 +14,7 @@ interface PDFUploaderProps {
 }
 
 export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
+  const [searchParams] = useSearchParams();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -21,6 +22,14 @@ export default function PDFUploader({ onUploadComplete }: PDFUploaderProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [shouldSummarize, setShouldSummarize] = useState(true);
+
+  useEffect(() => {
+    // Check if summarize parameter is in the URL
+    const summarizeParam = searchParams.get("summarize");
+    if (summarizeParam === "true") {
+      setShouldSummarize(true);
+    }
+  }, [searchParams]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

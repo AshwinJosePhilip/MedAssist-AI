@@ -16,6 +16,7 @@ import {
   User,
   LogOut,
   Home,
+  FileDigit,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -127,6 +128,15 @@ export default function Navbar() {
                   Documents
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  onClick={() =>
+                    navigate("/documents?tab=upload&summarize=true")
+                  }
+                  className="cursor-pointer flex items-center gap-2"
+                >
+                  <FileDigit className="h-4 w-4" />
+                  Summarize Medical PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={() => navigate("/profile")}
                   className="cursor-pointer flex items-center gap-2"
                 >
@@ -228,6 +238,16 @@ export default function Navbar() {
                 >
                   <FileText className="h-4 w-4" />
                   Documents
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/documents?tab=upload&summarize=true");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-primary/10"
+                >
+                  <FileDigit className="h-4 w-4" />
+                  Summarize Medical PDF
                 </button>
                 <button
                   onClick={() => {

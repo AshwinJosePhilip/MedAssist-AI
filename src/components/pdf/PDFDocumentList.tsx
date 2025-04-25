@@ -143,9 +143,35 @@ export default function PDFDocumentList({
   return (
     <Card className="w-full bg-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Medical Documents
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Medical Documents
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAddDocument && onAddDocument()}
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onAddDocument && onAddDocument();
+                // Set summarize=true in the URL
+                const url = new URL(window.location.href);
+                url.searchParams.set("summarize", "true");
+                window.history.pushState({}, "", url);
+              }}
+            >
+              <FileDigit className="h-4 w-4 mr-2" />
+              Summarize
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
