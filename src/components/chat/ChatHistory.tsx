@@ -4,9 +4,11 @@ import { useAuth } from "@/lib/auth";
 import {
   getChatSessions,
   deleteChatSession,
+  renameChatSession,
   ChatSession,
 } from "@/lib/chatHistory";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Pill,
@@ -32,6 +41,7 @@ import {
   MessageSquare,
   Trash2,
   Plus,
+  Pencil,
 } from "lucide-react";
 
 interface ChatHistoryProps {
@@ -50,6 +60,10 @@ export default function ChatHistory({
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [sessionToRename, setSessionToRename] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [sessionToRenameTitle, setSessionToRenameTitle] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -92,6 +106,29 @@ export default function ChatHistory({
     } finally {
       setDeleteDialogOpen(false);
       setSessionToDelete(null);
+    }
+  };
+
+  const handleRenameSession = async () => {
+    if (!sessionToRename || !newTitle.trim()) return;
+
+    try {
+      const success = await renameChatSession(sessionToRename, newTitle.trim());
+      if (success) {
+        setSessions(
+          sessions.map((session) =>
+            session.id === sessionToRename
+              ? { ...session, title: newTitle.trim() }
+              : session
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error renaming chat session:", error);
+    } finally {
+      setRenameDialogOpen(false);
+      setSessionToRename(null);
+      setNewTitle("");
     }
   };
 
@@ -187,18 +224,34 @@ export default function ChatHistory({
                         {session.lastMessage || "No messages yet"}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-50 hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSessionToDelete(session.id);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-50 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSessionToRename(session.id);
+                          setSessionToRenameTitle(session.title);
+                          setNewTitle(session.title);
+                          setRenameDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-50 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSessionToDelete(session.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -227,6 +280,34 @@ export default function ChatHistory({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Enter new title"
+              className="w-full"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setRenameDialogOpen(false);
+                setSessionToRename(null);
+                setNewTitle("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSession}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

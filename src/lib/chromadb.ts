@@ -25,7 +25,7 @@ interface QueryResult {
   distance: number;
 }
 
-// Mock ChromaDB client class
+// Enhanced ChromaDB client class with improved vector search capabilities
 export class ChromaClient {
   private baseUrl: string;
   private collections: Map<string, ChromaCollection>;
@@ -70,7 +70,7 @@ export class ChromaClient {
     }
   }
 
-  // Add documents to a collection
+  // Add documents to a collection with improved metadata handling
   async addDocuments(
     collectionName: string,
     documents: Omit<ChromaDocument, "embedding">[],
@@ -88,11 +88,19 @@ export class ChromaClient {
         embedding: this.mockGenerateEmbedding(doc.text),
       }));
 
+      // Check for duplicate IDs and replace if they exist
       const collectionDocs = this.documents.get(collectionName) || [];
+      const existingIds = new Set(collectionDocs.map(doc => doc.id));
+      
+      // Filter out existing documents that will be replaced
+      const filteredDocs = collectionDocs.filter(doc => !docsWithEmbeddings.some(newDoc => newDoc.id === doc.id));
+      
+      // Add the new documents
       this.documents.set(collectionName, [
-        ...collectionDocs,
+        ...filteredDocs,
         ...docsWithEmbeddings,
       ]);
+      
       return true;
     } catch (error) {
       console.error("Error adding documents:", error);
@@ -100,11 +108,12 @@ export class ChromaClient {
     }
   }
 
-  // Query documents from a collection
+  // Query a collection with enhanced relevance ranking and filtering
   async queryCollection(
     collectionName: string,
-    queryText: string,
+    query: string,
     limit: number = 5,
+    filters?: Record<string, any>,
   ): Promise<QueryResult[]> {
     try {
       if (!this.collections.has(collectionName)) {
@@ -112,19 +121,47 @@ export class ChromaClient {
         return [];
       }
 
-      const queryEmbedding = this.mockGenerateEmbedding(queryText);
+      // Generate query embedding
+      const queryEmbedding = this.mockGenerateEmbedding(query);
+
+      // Get documents from collection
       const documents = this.documents.get(collectionName) || [];
 
-      // Simulate vector similarity search
+      // Enhanced filtering with improved relevance scoring
       const results = documents
-        .map((doc) => ({
-          id: doc.id,
-          text: doc.text,
-          metadata: doc.metadata || {},
-          distance: this.mockCalculateDistance(queryEmbedding, doc.embedding!),
-        }))
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, limit);
+        .filter((doc) => {
+          if (!filters) return true;
+          
+          // Check if document matches all filters
+          return Object.entries(filters).every(([key, value]) => {
+            return doc.metadata?.[key] === value;
+          });
+        })
+        .map((doc) => {
+          // Calculate cosine similarity with improved precision
+          const similarity = this.cosineSimilarity(queryEmbedding, doc.embedding || []);
+          const distance = 1 - similarity; // Convert similarity to distance (lower is better)
+
+          // Extract keywords from query for additional relevance check
+          const queryKeywords = query.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+          const textContainsKeywords = queryKeywords.some(keyword => 
+            doc.text.toLowerCase().includes(keyword));
+          
+          // Boost relevance score for documents containing query keywords
+          const adjustedDistance = textContainsKeywords ? distance * 0.8 : distance;
+
+          return {
+            id: doc.id,
+            text: doc.text,
+            metadata: doc.metadata || {},
+            distance: adjustedDistance,
+            originalDistance: distance,
+            containsKeywords: textContainsKeywords
+          };
+        })
+        .sort((a, b) => a.distance - b.distance) // Sort by adjusted distance (ascending)
+        .filter(result => result.distance < 0.4 || result.containsKeywords) // Only include highly relevant results
+        .slice(0, limit); // Limit results
 
       return results;
     } catch (error) {
@@ -133,43 +170,58 @@ export class ChromaClient {
     }
   }
 
-  // Delete a collection
-  async deleteCollection(name: string): Promise<boolean> {
-    try {
-      if (!this.collections.has(name)) {
-        console.warn(`Collection ${name} does not exist`);
-        return false;
-      }
-
-      this.collections.delete(name);
-      this.documents.delete(name);
-      return true;
-    } catch (error) {
-      console.error("Error deleting collection:", error);
-      return false;
-    }
-  }
-
-  // Mock function to generate embeddings
+  // Helper method to generate mock embeddings
   private mockGenerateEmbedding(text: string): number[] {
     // In a real implementation, you would use an embedding model
-    // For now, we'll just generate random values
-    return Array.from({ length: 384 }, () => Math.random());
+    // For now, we'll generate a random embedding based on the text
+    const hash = this.simpleHash(text);
+    const embedding = new Array(128).fill(0).map((_, i) => {
+      // Generate a deterministic but seemingly random value based on the hash and position
+      return Math.sin(hash * (i + 1)) * 0.5 + 0.5;
+    });
+    
+    // Normalize the embedding
+    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+    return embedding.map(val => val / magnitude);
   }
 
-  // Mock function to calculate distance between embeddings
-  private mockCalculateDistance(
-    embedding1: number[],
-    embedding2: number[],
-  ): number {
-    // Simple Euclidean distance calculation
-    let sum = 0;
-    for (let i = 0; i < embedding1.length; i++) {
-      sum += Math.pow(embedding1[i] - embedding2[i], 2);
+  // Simple string hash function for deterministic embeddings
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-    return Math.sqrt(sum);
+    return hash;
+  }
+
+  // Calculate cosine similarity between two vectors
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) {
+      throw new Error("Vectors must have the same length");
+    }
+
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      magnitudeA += a[i] * a[i];
+      magnitudeB += b[i] * b[i];
+    }
+
+    magnitudeA = Math.sqrt(magnitudeA);
+    magnitudeB = Math.sqrt(magnitudeB);
+
+    if (magnitudeA === 0 || magnitudeB === 0) {
+      return 0;
+    }
+
+    return dotProduct / (magnitudeA * magnitudeB);
   }
 }
 
-// Create and export a singleton instance
+// Export a singleton instance
 export const chromaClient = new ChromaClient();

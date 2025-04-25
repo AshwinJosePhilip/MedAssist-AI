@@ -57,7 +57,7 @@ export default function ChatbotSelection() {
       icon: <AlertCircle className="h-10 w-10 text-red-500" />,
       color: "from-red-500/20 to-red-600/20",
       borderColor: "border-red-500/30",
-      route: "/chat/firstaid",
+      route: "/first-aid",
     },
     {
       id: "fitness",

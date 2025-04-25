@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import FormattedWorkoutPlan from "../workout/FormattedWorkoutPlan";
 import FormattedMedicalResponse from "../medical/FormattedMedicalResponse";
+import HospitalList from "../medical/HospitalList";
 
 interface FormattedResponseProps {
   content: string;
@@ -14,11 +15,23 @@ export default function FormattedResponse({
   type,
   data,
 }: FormattedResponseProps) {
+  // For hospital search results
+  if (type === "medical" && data?.hospitals?.length > 0) {
+    return (
+      <>
+        <Card className="w-full bg-card/90 backdrop-blur-sm shadow-md border border-primary/20">
+          <CardContent className="p-4 whitespace-pre-line">{content}</CardContent>
+        </Card>
+        <HospitalList hospitals={data.hospitals} />
+      </>
+    );
+  }
+
   // For medical research responses with PubMed data
   if (type === "medical" && data?.pubmedArticles?.length > 0) {
     return (
       <FormattedMedicalResponse
-        title="PubMed Medical Research"
+        title="PubMed Research Evidence"
         articles={data.pubmedArticles}
       />
     );

@@ -1,11 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 
 interface ChatInputProps {
   value?: string;
-  onChange?: (value: string) => void;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSend?: () => void;
   disabled?: boolean;
   placeholder?: string;
@@ -28,13 +28,13 @@ const ChatInput = ({
   return (
     <div className="border-t bg-background/80 backdrop-blur-sm p-4 shadow-lg sticky bottom-0 left-0 right-0 z-20">
       <div className="mx-auto flex max-w-4xl items-center gap-2">
-        <Input
-          placeholder={placeholder}
+        <Textarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onChange={onChange}
+          placeholder={placeholder || "Type your message..."}
+          className="min-h-12 resize-none border-0 focus-visible:ring-0 focus-visible:ring-transparent flex-1"
+          onKeyDown={handleKeyPress}
           disabled={disabled}
-          className="flex-1"
         />
         <Button
           onClick={onSend}

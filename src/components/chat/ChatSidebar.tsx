@@ -32,12 +32,14 @@ interface ChatSidebarProps {
   currentChatId?: string;
   onSelectChat?: (sessionId: string) => void;
   onNewChat?: () => void;
+  isOpen?: boolean;
 }
 
 export default function ChatSidebar({
   currentChatId,
   onSelectChat,
   onNewChat,
+  isOpen = false,
 }: ChatSidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -109,9 +111,12 @@ export default function ChatSidebar({
     return date.toLocaleDateString();
   };
 
+  // Apply conditional styling based on isOpen prop
+  const sidebarClasses = `w-64 h-full border-r border-border bg-background/95 flex flex-col ${isOpen ? 'block' : 'hidden md:block'}`;
+
   return (
     <>
-      <div className="w-64 h-full border-r border-border bg-background/95 flex flex-col">
+      <div className={sidebarClasses}>
         <div className="p-4 border-b border-border">
           <Button
             variant="default"
@@ -129,14 +134,14 @@ export default function ChatSidebar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="h-7 w-7 p-0 hover:bg-muted/50"
             onClick={() => navigate("/chat/history")}
           >
             <History className="h-4 w-4" />
           </Button>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 h-[calc(100vh-10rem)]">
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="animate-pulse text-muted-foreground">
@@ -149,46 +154,44 @@ export default function ChatSidebar({
                 No chat history yet
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Start a new conversation
+                Start a new chat to see your history
               </p>
             </div>
           ) : (
-            <div className="space-y-1 p-2">
+            <div className="p-2">
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className={`p-2 rounded-md flex justify-between items-start cursor-pointer hover:bg-muted/50 transition-colors text-sm ${currentChatId === session.id ? "bg-muted border border-primary/30" : "border border-transparent hover:border-primary/20"}`}
+                  className={`flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer ${currentChatId === session.id ? "bg-muted" : ""}`}
                   onClick={() => {
                     if (onSelectChat) {
                       onSelectChat(session.id);
-                    } else {
-                      // Navigate based on chat type
-                      navigate(
-                        `/chat/${session.chatType}?session=${session.id}`,
-                      );
+                      navigate(`/chat/${session.chatType}?session=${session.id}`);
                     }
                   }}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {getChatTypeIcon(session.chatType)}
-                      <h3 className="font-medium truncate">{session.title}</h3>
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    {getChatTypeIcon(session.chatType)}
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-medium truncate">
+                        {session.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(session.updatedAt)}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {session.lastMessage || "No messages yet"}
-                    </p>
                   </div>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-50 hover:opacity-100 ml-1"
+                    size="sm"
+                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSessionToDelete(session.id);
                       setDeleteDialogOpen(true);
                     }}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
               ))}
@@ -208,10 +211,7 @@ export default function ChatSidebar({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteSession}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleDeleteSession}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -10,6 +10,7 @@ import SignUp from "./pages/auth/signup";
 import ChatbotSelection from "./pages/chatbot-selection";
 import Documents from "./pages/documents";
 import FirstAid from "./pages/first-aid";
+import Profile from "./pages/profile";
 
 // Chatbot Components
 import MedicalChatbot from "./components/chat/MedicalChatbot";
@@ -133,6 +134,18 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Documents />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <div className="flex-grow">
+                        <Profile />
+                      </div>
+                    </div>
                   </PrivateRoute>
                 }
               />

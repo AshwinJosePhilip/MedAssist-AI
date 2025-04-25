@@ -1,12 +1,13 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "starter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc ; vite build",
-    "build-no-errors": "tsc ; vite build",
+    "build": "tsc && vite build",
+    "build-no-errors": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "types:supabase": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/supabase.ts"
@@ -73,7 +74,12 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "3.4.1",
+<<<<<<< HEAD
     "tempo-devtools": "^2.0.102",
+=======
+    "tempo-devtools": "^2.0.94",
+    "ts-node": "^10.9.2",
+>>>>>>> 60ad4590a28d38bff88b365648d8f84d72beb42f
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
   }

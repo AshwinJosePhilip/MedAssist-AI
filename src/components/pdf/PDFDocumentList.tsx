@@ -98,6 +98,40 @@ export default function PDFDocumentList({
     );
   }
 
+  // Define state variables for summary functionality
+  const [selectedSummary, setSelectedSummary] = useState<{
+    documentId: string;
+    title: string;
+    summary: string;
+    createdAt: string;
+  } | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const viewSummary = async (documentId: string) => {
+    // This would be implemented to fetch and display the summary
+    // For now it's a placeholder
+    setSummaryLoading(true);
+    try {
+      // Mock implementation
+      setSelectedSummary({
+        documentId,
+        title: "Document Title",
+        summary: "This is a sample summary of the document.",
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      setSummaryError("Failed to load summary");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const closeSummary = () => {
+    setSelectedSummary(null);
+    setSummaryError(null);
+  };
+
   // If a summary is selected or loading, show the summary view instead of the document list
   if (selectedSummary || summaryLoading || summaryError) {
     return (
