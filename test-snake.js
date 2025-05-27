@@ -1,1 +1,0 @@
-const { getFirstAidGuide } = require("./src/lib/firstaid"); async function testSnakeBite() { try { const guide = await getFirstAidGuide("snake bite"); console.log(JSON.stringify(guide, null, 2)); } catch (error) { console.error("Error:", error); } } testSnakeBite();

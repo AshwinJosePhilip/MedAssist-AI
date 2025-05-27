@@ -4,18 +4,13 @@ export interface ChatMessage {
   id: string;
   isBot: boolean;
   message: string;
-  timestamp: string;
-  sourceLink?: {
+  timestamp: string;  sourceLink?: {
     title: string;
     url: string;
   };
-<<<<<<< HEAD
-  pubmedArticles?: any[];
-=======
   pubmedArticles?: any[]; // Store PubMed search results
   responseType?: string; // Type of response (e.g., hospital-info, nutrition-plan)
   additionalData?: any; // Any additional structured data
->>>>>>> 60ad4590a28d38bff88b365648d8f84d72beb42f
 }
 
 export interface ChatSession {
@@ -73,25 +68,7 @@ export async function saveChatMessage(
   const tempId = 'temp-' + Date.now();
   const cached = getCachedMessages(sessionId);
   cached.push({ ...message, id: tempId });
-  cacheMessages(sessionId, cached);
-  try {
-<<<<<<< HEAD
-    // Prepare the message data for insertion
-    const messageData: any = {
-      session_id: sessionId,
-      is_bot: message.isBot,
-      message: message.message,
-      timestamp: message.timestamp,
-      source_title: message.sourceLink?.title || null,
-      source_url: message.sourceLink?.url || null,
-    };
-
-    // Add pubmedArticles if they exist
-    if (message.pubmedArticles && message.pubmedArticles.length > 0) {
-      messageData.pubmed_articles = message.pubmedArticles;
-    }
-
-=======
+  cacheMessages(sessionId, cached);  try {
     console.log("Saving message to session:", sessionId, message);
     
     // Validate inputs before saving
@@ -119,7 +96,6 @@ export async function saveChatMessage(
     };
     
     // Save the message with all its details
->>>>>>> 60ad4590a28d38bff88b365648d8f84d72beb42f
     const { data, error } = await supabase
       .from("chat_messages")
       .insert([messageData])
@@ -216,9 +192,19 @@ export async function getChatMessages(
     }, 0);
     return cached;
   }
-
   try {
-<<<<<<< HEAD
+    const freshData = await fetchMessagesFromDB(sessionId);
+    cacheMessages(sessionId, freshData);
+    return freshData;
+  } catch (error) {
+    console.error("Error in getChatMessages:", error);
+    return [];
+  }
+}
+
+// Function to fetch messages from the database
+async function fetchMessagesFromDB(sessionId: string): Promise<ChatMessage[]> {
+  try {
     const { data, error } = await supabase
       .from("chat_messages")
       .select("*")
@@ -242,59 +228,28 @@ export async function getChatMessages(
           }
         : undefined,
       pubmedArticles: message.pubmed_articles || [],
+      responseType: message.response_type,
+      additionalData: message.additional_data,
     }));
-=======
-    const freshData = await fetchMessagesFromDB(sessionId);
-    cacheMessages(sessionId, freshData);
-    return freshData;
->>>>>>> 60ad4590a28d38bff88b365648d8f84d72beb42f
   } catch (error) {
-    console.error("Error in getChatMessages:", error);
+    console.error("Error in fetchMessagesFromDB:", error);
     return [];
   }
 }
 
 // Cache management helpers
-const getCachedMessages = (sessionId: string): ChatMessage[] => {
-  try {
-    return JSON.parse(localStorage.getItem(`chat-${sessionId}`) || '[]');
-  } catch {
-    return [];
-  }
-};
+const messageCache = new Map<string, ChatMessage[]>();
 
-const cacheMessages = (sessionId: string, messages: ChatMessage[]) => {
-  localStorage.setItem(`chat-${sessionId}`, JSON.stringify(messages));
-};
+function getCachedMessages(sessionId: string): ChatMessage[] {
+  return messageCache.get(sessionId) || [];
+}
+
+function cacheMessages(sessionId: string, messages: ChatMessage[]): void {
+  messageCache.set(sessionId, messages);
+}
 
 const clearChatCache = (sessionId: string) => {
   localStorage.removeItem(`chat-${sessionId}`);
-};
-
-const convertMessage = (message: any): ChatMessage => ({
-  id: message.id,
-  isBot: message.is_bot,
-  message: message.message,
-  timestamp: message.timestamp,
-  sourceLink: message.source_title
-    ? {
-        title: message.source_title,
-        url: message.source_url,
-      }
-    : undefined,
-  pubmedArticles: message.pubmed_articles || [],
-  responseType: message.response_type,
-  additionalData: message.additional_data,
-});
-
-const fetchMessagesFromDB = async (sessionId: string) => {
-  const { data, error } = await supabase
-    .from("chat_messages")
-    .select("*")
-    .eq("session_id", sessionId)
-    .order("timestamp", { ascending: true });
-
-  return error ? [] : data.map(convertMessage);
 };
 
 // Function to delete a chat session

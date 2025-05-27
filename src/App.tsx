@@ -10,7 +10,6 @@ import SignUp from "./pages/auth/signup";
 import ChatbotSelection from "./pages/chatbot-selection";
 import Documents from "./pages/documents";
 import FirstAid from "./pages/first-aid";
-import Profile from "./pages/profile";
 
 // Chatbot Components
 import MedicalChatbot from "./components/chat/MedicalChatbot";

@@ -371,12 +371,10 @@ export const chatWithMistral = async (
       isFirstAid,
       pubmedResults,
       response: assistantResponse,
-    };
-  } catch (error) {
+    };  } catch (error) {
     console.error("Error in chatWithMistral:", error);
     return { context: "", sources: [], response: "Sorry, I encountered an error processing your request." };
   }
-<<<<<<< HEAD
 };
 
 // Function to generate a summary of a medical document using AI
@@ -390,6 +388,4 @@ export async function generateDocumentSummary(documentId: string) {
     console.error("Error generating document summary:", error);
     throw error;
   }
-=======
->>>>>>> 60ad4590a28d38bff88b365648d8f84d72beb42f
 }
